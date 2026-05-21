@@ -1,171 +1,340 @@
-<!-- Agrega esto dentro del <body> -->
-<h1>Formulario de Asistencia</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<form id="formularioAsistencia">
-    <!-- Campos del formulario -->
-    ...
+<title>Registro de Consultores</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#003366;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+label{
+    font-weight:bold;
+}
+
+input{
+    width:100%;
+    padding:8px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    color:white;
+}
+
+.btn-add{
+    background:#28a745;
+}
+
+.btn-export{
+    background:#0d6efd;
+}
+
+.btn-edit{
+    background:#ffc107;
+    color:black;
+}
+
+.btn-delete{
+    background:#dc3545;
+}
+
+.actions{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th{
+    background:#003366;
+    color:white;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:left;
+}
+
+tr:nth-child(even){
+    background:#f8f9fa;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Registro de Consultores</h1>
+
+<form id="formulario">
+
+<div class="form-grid">
+
+<div>
+<label>Número de Registro</label>
+<input type="text" id="registro">
+</div>
+
+<div>
+<label>Nombre</label>
+<input type="text" id="nombre">
+</div>
+
+<div>
+<label>CUIL</label>
+<input type="text" id="cuil">
+</div>
+
+<div>
+<label>Razón Social</label>
+<input type="text" id="razonSocial">
+</div>
+
+</div>
+
+<div class="actions">
+<button type="button" class="btn-add" onclick="agregarOActualizar()">
+Guardar Registro
+</button>
+
+<button type="button" class="btn-export" onclick="exportarExcel()">
+Exportar Excel
+</button>
+</div>
+
 </form>
 
-<!-- Nuevo botón para importar Excel -->
-<input type="file" id="importarExcel" accept=".xlsx" style="display: block; margin: 10px auto;">
-
-<!-- Botón para exportar manualmente -->
-<button class="btn-export" onclick="exportarExcel()">Exportar a Excel</button>
-
-<!-- Tabla -->
 <table>
-    ...
+
+<thead>
+<tr>
+<th>N° Registro</th>
+<th>Nombre</th>
+<th>CUIL</th>
+<th>Razón Social</th>
+<th>Acciones</th>
+</tr>
+</thead>
+
+<tbody id="tablaConsultores"></tbody>
+
 </table>
 
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <script>
-    let filaEditando = null;
 
-    document.addEventListener("DOMContentLoaded", cargarDesdeLocalStorage);
-    document.getElementById("importarExcel").addEventListener("change", importarExcel);
+let filaEditando = null;
 
-    function agregarOActualizar() {
-        const apellido = document.getElementById('apellido').value.trim();
-        const nombre = document.getElementById('nombre').value.trim();
-        const dni = document.getElementById('dni').value.trim();
-        const estado = document.getElementById('estado').value;
+document.addEventListener("DOMContentLoaded", cargarDatos);
 
-        if (!nombre || !apellido || !dni) {
-            alert('Por favor, complete todos los campos.');
-            return;
-        }
+function agregarOActualizar(){
 
-        if (filaEditando) {
-            filaEditando.cells[0].textContent = apellido;
-            filaEditando.cells[1].textContent = nombre;
-            filaEditando.cells[2].textContent = dni;
-            filaEditando.cells[3].textContent = estado;
-            filaEditando = null;
-        } else {
-            const tabla = document.getElementById('tablaAsistencia');
-            const fila = document.createElement('tr');
-            fila.innerHTML = `
-                <td>${apellido}</td>
-                <td>${nombre}</td>
-                <td>${dni}</td>
-                <td>${estado}</td>
-                <td>
-                    <button class="btn btn-edit" onclick="editarFila(this)">Editar</button>
-                    <button class="btn btn-delete" onclick="borrarFila(this)">Borrar</button>
-                </td>
-            `;
-            tabla.appendChild(fila);
-        }
+const registro = document.getElementById("registro").value.trim();
+const nombre = document.getElementById("nombre").value.trim();
+const cuil = document.getElementById("cuil").value.trim();
+const razonSocial = document.getElementById("razonSocial").value.trim();
 
-        guardarYExportar(); // Backup automático
-        document.getElementById('formularioAsistencia').reset();
-    }
+if(!registro || !nombre || !cuil || !razonSocial){
+    alert("Complete todos los campos");
+    return;
+}
 
-    function editarFila(boton) {
-        filaEditando = boton.parentElement.parentElement;
-        document.getElementById('apellido').value = filaEditando.cells[0].textContent;
-        document.getElementById('nombre').value = filaEditando.cells[1].textContent;
-        document.getElementById('dni').value = filaEditando.cells[2].textContent;
-        document.getElementById('estado').value = filaEditando.cells[3].textContent;
-    }
+if(filaEditando){
 
-    function borrarFila(boton) {
-        const fila = boton.parentElement.parentElement;
-        fila.remove();
-        guardarYExportar(); // Backup automático
-    }
+    filaEditando.cells[0].textContent = registro;
+    filaEditando.cells[1].textContent = nombre;
+    filaEditando.cells[2].textContent = cuil;
+    filaEditando.cells[3].textContent = razonSocial;
 
-    function guardarEnLocalStorage() {
-        const tabla = document.getElementById('tablaAsistencia');
-        const filas = Array.from(tabla.rows).map(fila => [
-            fila.cells[0].textContent,
-            fila.cells[1].textContent,
-            fila.cells[2].textContent,
-            fila.cells[3].textContent
-        ]);
-        localStorage.setItem('asistencia', JSON.stringify(filas));
-    }
+    filaEditando = null;
 
-    function guardarYExportar() {
-        guardarEnLocalStorage();
-        exportarExcel();
-    }
+}else{
 
-    function cargarDesdeLocalStorage() {
-        const datos = localStorage.getItem('asistencia');
-        if (!datos) return;
-        const filas = JSON.parse(datos);
-        const tabla = document.getElementById('tablaAsistencia');
-        filas.forEach(f => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${f[0]}</td>
-                <td>${f[1]}</td>
-                <td>${f[2]}</td>
-                <td>${f[3]}</td>
-                <td>
-                    <button class="btn btn-edit" onclick="editarFila(this)">Editar</button>
-                    <button class="btn btn-delete" onclick="borrarFila(this)">Borrar</button>
-                </td>
-            `;
-            tabla.appendChild(tr);
-        });
-    }
+const fila = document.createElement("tr");
 
-    function exportarExcel() {
-        const tabla = document.getElementById('tablaAsistencia');
-        const filas = Array.from(tabla.rows).map(fila => [
-            fila.cells[0].textContent,
-            fila.cells[1].textContent,
-            fila.cells[2].textContent,
-            fila.cells[3].textContent
-        ]);
-        const ws = XLSX.utils.aoa_to_sheet([
-            ['Apellido', 'Nombre', 'DNI', 'Estado'],
-            ...filas
-        ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
-        const fecha = new Date().toISOString().split('T')[0];
-        XLSX.writeFile(wb, `asistencia_${fecha}.xlsx`);
-    }
+fila.innerHTML = `
+<td>${registro}</td>
+<td>${nombre}</td>
+<td>${cuil}</td>
+<td>${razonSocial}</td>
+<td>
+<button class="btn-edit" onclick="editarFila(this)">Editar</button>
+<button class="btn-delete" onclick="borrarFila(this)">Eliminar</button>
+</td>
+`;
 
-    function importarExcel(e) {
-        const archivo = e.target.files[0];
-        if (!archivo) return;
+document.getElementById("tablaConsultores").appendChild(fila);
 
-        const lector = new FileReader();
-        lector.onload = function (e) {
-            const datos = new Uint8Array(e.target.result);
-            const libro = XLSX.read(datos, { type: 'array' });
-            const hoja = libro.Sheets[libro.SheetNames[0]];
-            const filas = XLSX.utils.sheet_to_json(hoja, { header: 1 }).slice(1); // quitar encabezado
+}
 
-            const tabla = document.getElementById('tablaAsistencia');
-            tabla.innerHTML = '';
+guardarDatos();
 
-            filas.forEach(f => {
-                if (f.length >= 4) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${f[0]}</td>
-                        <td>${f[1]}</td>
-                        <td>${f[2]}</td>
-                        <td>${f[3]}</td>
-                        <td>
-                            <button class="btn btn-edit" onclick="editarFila(this)">Editar</button>
-                            <button class="btn btn-delete" onclick="borrarFila(this)">Borrar</button>
-                        </td>
-                    `;
-                    tabla.appendChild(tr);
-                }
-            });
+document.getElementById("formulario").reset();
 
-            guardarEnLocalStorage(); // guardar los importados
-            exportarExcel(); // hacer backup
-        };
-        lector.readAsArrayBuffer(archivo);
-    }
+}
+
+function editarFila(btn){
+
+filaEditando = btn.parentElement.parentElement;
+
+document.getElementById("registro").value =
+filaEditando.cells[0].textContent;
+
+document.getElementById("nombre").value =
+filaEditando.cells[1].textContent;
+
+document.getElementById("cuil").value =
+filaEditando.cells[2].textContent;
+
+document.getElementById("razonSocial").value =
+filaEditando.cells[3].textContent;
+
+}
+
+function borrarFila(btn){
+
+if(confirm("¿Eliminar registro?")){
+
+btn.parentElement.parentElement.remove();
+
+guardarDatos();
+
+}
+
+}
+
+function guardarDatos(){
+
+const filas = [];
+
+document.querySelectorAll("#tablaConsultores tr").forEach(fila => {
+
+filas.push([
+fila.cells[0].textContent,
+fila.cells[1].textContent,
+fila.cells[2].textContent,
+fila.cells[3].textContent
+]);
+
+});
+
+localStorage.setItem(
+"consultores",
+JSON.stringify(filas)
+);
+
+}
+
+function cargarDatos(){
+
+const datos = localStorage.getItem("consultores");
+
+if(!datos) return;
+
+const filas = JSON.parse(datos);
+
+const tabla =
+document.getElementById("tablaConsultores");
+
+filas.forEach(fila => {
+
+const tr = document.createElement("tr");
+
+tr.innerHTML = `
+<td>${fila[0]}</td>
+<td>${fila[1]}</td>
+<td>${fila[2]}</td>
+<td>${fila[3]}</td>
+<td>
+<button class="btn-edit" onclick="editarFila(this)">Editar</button>
+<button class="btn-delete" onclick="borrarFila(this)">Eliminar</button>
+</td>
+`;
+
+tabla.appendChild(tr);
+
+});
+
+}
+
+function exportarExcel(){
+
+const datos = [
+['Número de Registro','Nombre','CUIL','Razón Social']
+];
+
+document.querySelectorAll("#tablaConsultores tr")
+.forEach(fila => {
+
+datos.push([
+fila.cells[0].textContent,
+fila.cells[1].textContent,
+fila.cells[2].textContent,
+fila.cells[3].textContent
+]);
+
+});
+
+const ws = XLSX.utils.aoa_to_sheet(datos);
+
+const wb = XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(
+wb,
+ws,
+"Consultores"
+);
+
+XLSX.writeFile(
+wb,
+"Registro_Consultores.xlsx"
+);
+
+}
+
 </script>
 
-<!-- Librería para Excel -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+</body>
+</html>
